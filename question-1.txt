@@ -1,0 +1,4 @@
+1. Normal distribution of the likelihood p(x|i) and pooled covariance matrix (for all classes)
+2. Normal distribution of the likelihood p(x|i)
+3. Metric for defining "nearest"
+4. 
