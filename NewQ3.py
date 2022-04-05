@@ -40,7 +40,7 @@ import sklearn as sk
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn import tree
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
 def testc(y_actual, y): #returns all true-positives, false positives etc for our classifications
     TP = 0
@@ -67,6 +67,8 @@ QDAF1array=np.empty([folds,it])
 DTCF1array=np.empty([folds,it])
 QDAaccuracyarray=np.empty([folds,it])
 DTCaccuracyarray=np.empty([folds,it])
+QDAsensitivityarray=np.empty([folds,it])
+DTCsensitivityarray=np.empty([folds,it])
 for j in range(it):
   X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
   #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
@@ -92,6 +94,9 @@ for j in range(it):
       QDAaccuracyarray[i,j] = accuracy_score(newy_test,QDA.predict(newX_test))
       DTCaccuracyarray[i,j] = accuracy_score(newy_test,DTC.predict(newX_test))
 
+      QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
+      DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
+
   QDAmean = np.mean(QDAresult_array.astype(int), axis=0)
   DTCmean = np.mean(DTCresult_array.astype(int), axis=0)
   QDAscore = QDAscore+QDAmean
@@ -99,12 +104,10 @@ for j in range(it):
 #Todo starndard dev
 QDAscore=QDAscore/it
 DTCscore=DTCscore/it
-print(np.std(QDAaccuracyarray))
-print(np.mean(QDAaccuracyarray))
-print(np.std(DTCaccuracyarray))
+
 ## Results
 t = Texttable()
 t.add_rows([['X', 'Accuracy', 'Sensitivity', 'F1-Score'],
-            ['QDA', (QDAscore[0,2]+QDAscore[0,0])/(QDAscore[0,2]+QDAscore[0,0]+QDAscore[0,1]+QDAscore[0,3]),QDAscore[0,0]/(QDAscore[0,0]+QDAscore[0,3]), 2*QDAscore[0,0]/(2*QDAscore[0,0]+QDAscore[0,3]+QDAscore[0,1])],
-            ['DTC', (DTCscore[0,2]+DTCscore[0,0])/(DTCscore[0,2]+DTCscore[0,0]+DTCscore[0,1]+DTCscore[0,3]),DTCscore[0,0]/(DTCscore[0,0]+DTCscore[0,3]), 2*DTCscore[0,0]/(2*DTCscore[0,0]+DTCscore[0,3]+DTCscore[0,1])]])
+            ['QDA', '%f with std %f' % (np.mean(QDAaccuracyarray),np.std(QDAaccuracyarray)),'%f with std %f' % (np.mean(QDAsensitivityarray),np.std(QDAsensitivityarray)), '%f with std %f' % (np.mean(QDAF1array),np.std(QDAF1array))],
+            ['DTC', '%f with std %f' % (np.mean(DTCaccuracyarray), np.std(DTCaccuracyarray)), '%f with std %f' % (np.mean(DTCsensitivityarray), np.std(DTCsensitivityarray)),'%f with std %f' % (np.mean(DTCF1array), np.std(DTCF1array))]])
 print(t.draw())
