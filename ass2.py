@@ -1,4 +1,3 @@
-from black import T
 from sklearn import tree
 import numpy as np
 import pandas as pd
@@ -32,8 +31,8 @@ def generate_gaussian_data(n, mu, sigma):
  # each class should have individual covar matrix
 def generate_mvn_data(n, mu, covar):
     #X = np.random.multivariate_normal(mu, covar, [n,2])
-    X = np.random.multivariate_normal(mean=[5,5], cov=covar[0], size=int(n/2))
-    X = np.append(X,np.random.multivariate_normal(mean=[5,5], cov=covar[1], size=int(n/2)),axis=0)
+    X = np.random.multivariate_normal(mean=mu[0], cov=covar[0], size=int(n/2))
+    X = np.append(X,np.random.multivariate_normal(mean=mu[1], cov=covar[1], size=int(n/2)),axis=0)
     y = np.zeros(n)
     y[int(n/2):] = 1
     return X, y
@@ -68,7 +67,7 @@ def evaluateQDA(n_datapoints: int, runs: int, mean, covar):
         X = data[0]
         y = data[1]
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
 
         qda = QuadraticDiscriminantAnalysis()
         qdaFit = qda.fit(X_train,y_train)
@@ -84,8 +83,8 @@ def evaluateQDA(n_datapoints: int, runs: int, mean, covar):
 
 
 
-mu = [5,5]
-covar = [[[1,0],[0,1]],  [[2,1],[1,2]]]
+mu = [[2,2], [5,5]]
+covar = [[[1,2],[2,1]],  [[2,1],[1,2]]]
 
 n = 100
 runs = 10
@@ -94,4 +93,4 @@ runs = 10
 
 result = evaluateQDA(n, runs, mu, covar)
 print("mean accuracy: %f (std %f)" % (result[0],result[1]))
-print(f'Training Loss = {result[2]}')
+print(f"training Loss = {result[2]}")
