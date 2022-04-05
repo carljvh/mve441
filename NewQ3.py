@@ -31,7 +31,6 @@ import sklearn as sk
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.metrics import f1_score
 from sklearn import tree
 from texttable import Texttable
 def testc(y_actual, y): #returns all true-positives, false positives etc for our classifications
@@ -56,7 +55,7 @@ it=10
 for j in range(it):
   X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
   #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
-  kfold = sk.model_selection.StratifiedKFold(n_splits=folds)
+  kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
   QDAresult_array = np.empty([folds,4])
   DTCresult_array = np.empty([folds,4])
   QDA = QuadraticDiscriminantAnalysis()
@@ -80,7 +79,7 @@ for j in range(it):
 QDAscore=QDAscore/it
 DTCscore=DTCscore/it
 
-## Reults
+## Results
 t = Texttable()
 t.add_rows([['X', 'Accuracy', 'Sensitivity', 'F1-Score'],
             ['QDA', (QDAscore[0,2]+QDAscore[0,0])/(QDAscore[0,2]+QDAscore[0,0]+QDAscore[0,1]+QDAscore[0,3]),QDAscore[0,0]/(QDAscore[0,0]+QDAscore[0,3]), 2*QDAscore[0,0]/(2*QDAscore[0,0]+QDAscore[0,3]+QDAscore[0,1])],
