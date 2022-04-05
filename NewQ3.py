@@ -1,8 +1,7 @@
-# Code from question
+# Code from question 3
 import pandas as pd
 import matplotlib as mt
 import numpy as np
-
 # Load UCI breast cancer dataset with column names and remove ID column
 uci_bc_data = pd.read_csv(
     "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data",
@@ -50,11 +49,11 @@ def testc(y_actual, y): #returns all true-positives, false positives etc for our
            FN += 1
     return(TP, FP, TN, FN)
 folds=10
-QDAscore=0
-DTCscore=0
-for j in range(10):
+QDAFN=0
+DTCFN=0
+for j in range(1000):
   X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-  kfold = sk.model_selection.KFold(n_splits=folds)
+  kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
   #kfold = sk.model_selection.StratifiedKFold(n_splits=folds)
   QDAresult_array = np.empty([folds,4])
   DTCresult_array = np.empty([folds,4])
@@ -72,7 +71,7 @@ for j in range(10):
       DTCresult_array[i,:] = testc(newy_test,DTC.predict(newX_test))
   QDAmean = np.mean(QDAresult_array.astype(int), axis=0)
   DTCmean = np.mean(DTCresult_array.astype(int), axis=0)
-  QDAscore = QDAscore+QDAmean[3]
-  DTCscore = DTCscore+DTCmean[3]
-print(QDAscore/len(range(10)))
-print(DTCscore/len(range(10)))
+  QDAFN = QDAFN+QDAmean[3]
+  DTCFN = DTCFN+DTCmean[3]
+print(QDAFN/len(range(1000)))
+print(DTCFN/len(range(1000)))
