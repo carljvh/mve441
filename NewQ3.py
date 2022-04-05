@@ -33,6 +33,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.metrics import f1_score
 from sklearn import tree
+from texttable import Texttable
 def testc(y_actual, y): #returns all true-positives, false positives etc for our classifications
     TP = 0
     FP = 0
@@ -49,17 +50,18 @@ def testc(y_actual, y): #returns all true-positives, false positives etc for our
            FN += 1
     return(TP, FP, TN, FN)
 folds=10
-QDAFN=0
-DTCFN=0
-for j in range(1000):
+QDAscore=np.empty([1,4])
+DTCscore=np.empty([1,4])
+it=10
+for j in range(it):
   X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-  kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
-  #kfold = sk.model_selection.StratifiedKFold(n_splits=folds)
+  #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
+  kfold = sk.model_selection.StratifiedKFold(n_splits=folds)
   QDAresult_array = np.empty([folds,4])
   DTCresult_array = np.empty([folds,4])
   QDA = QuadraticDiscriminantAnalysis()
   DTC = tree.DecisionTreeClassifier()
-  for i, (train_index, val_index) in enumerate(kfold.split(X_train)): #remove y_rain when you dont use stratisfied
+  for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_rain when you dont use stratisfied
       newX_train = [X_train[idx] for idx in train_index]
       newy_train = [y_train[idx] for idx in train_index]
       QDA.fit(newX_train, newy_train)
@@ -69,9 +71,18 @@ for j in range(1000):
 
       QDAresult_array[i,:] = testc(newy_test,QDA.predict(newX_test))
       DTCresult_array[i,:] = testc(newy_test,DTC.predict(newX_test))
+
   QDAmean = np.mean(QDAresult_array.astype(int), axis=0)
   DTCmean = np.mean(DTCresult_array.astype(int), axis=0)
-  QDAFN = QDAFN+QDAmean[3]
-  DTCFN = DTCFN+DTCmean[3]
-print(QDAFN/len(range(1000)))
-print(DTCFN/len(range(1000)))
+  QDAscore = QDAscore+QDAmean
+  DTCscore = DTCscore+DTCmean
+  
+QDAscore=QDAscore/it
+DTCscore=DTCscore/it
+
+## Reults
+t = Texttable()
+t.add_rows([['X', 'Accuracy', 'Sensitivity', 'F1-Score'],
+            ['QDA', (QDAscore[0,2]+QDAscore[0,0])/(QDAscore[0,2]+QDAscore[0,0]+QDAscore[0,1]+QDAscore[0,3]),QDAscore[0,0]/(QDAscore[0,0]+QDAscore[0,3]), 2*QDAscore[0,0]/(2*QDAscore[0,0]+QDAscore[0,3]+QDAscore[0,1])],
+            ['DTC', (DTCscore[0,2]+DTCscore[0,0])/(DTCscore[0,2]+DTCscore[0,0]+DTCscore[0,1]+DTCscore[0,3]),DTCscore[0,0]/(DTCscore[0,0]+DTCscore[0,3]),2*DTCscore[0,0]/(2*DTCscore[0,0]+DTCscore[0,3]+DTCscore[0,1])]])
+print(t.draw())
