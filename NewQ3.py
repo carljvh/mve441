@@ -76,7 +76,7 @@ for j in range(it):
   DTCmean = np.mean(DTCresult_array.astype(int), axis=0)
   QDAscore = QDAscore+QDAmean
   DTCscore = DTCscore+DTCmean
-  
+
 QDAscore=QDAscore/it
 DTCscore=DTCscore/it
 
