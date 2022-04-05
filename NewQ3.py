@@ -27,6 +27,15 @@ uci_bc_data = pd.read_csv(
 y = uci_bc_data.diagnosis.map({"B": 0, "M": 1}).to_numpy()
 X = uci_bc_data.drop("diagnosis", axis=1).to_numpy()
 # Our code
+from numpy import random
+shuffle = False
+p = 0.1
+if shuffle:
+    for i in range(len(y)):
+        r = random.rand()
+        if r < p:
+            y[i] = 1 - y[i]
+
 import sklearn as sk
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
