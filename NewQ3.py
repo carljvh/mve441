@@ -27,6 +27,7 @@ uci_bc_data = pd.read_csv(
 y = uci_bc_data.diagnosis.map({"B": 0, "M": 1}).to_numpy()
 X = uci_bc_data.drop("diagnosis", axis=1).to_numpy()
 # Our code
+#shuffle for Q4
 from numpy import random
 shuffle = False
 p = 0.1
