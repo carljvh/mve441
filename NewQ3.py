@@ -36,7 +36,7 @@ from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
 from numpy import random
 import matplotlib.pyplot as plt
-folds = 5
+folds = 2
 it = 100
 prange = 25
 # 3 measurements for 2 methods
@@ -50,36 +50,39 @@ QDAplot = np.empty([prange])
 DTCplot = np.empty([prange])
 for p in range(prange):
     shuffle = True
-    newp = p/100
-    if shuffle:
-        for i in range(len(y)):
-            r = random.rand()
-            if r < newp:
-                y[i] = 1 - y[i]
+    newp = p / 100
     for j in range(it):
-      X_train, x_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25)
-      #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
-      kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
-      QDA = QuadraticDiscriminantAnalysis()
-      DTC = tree.DecisionTreeClassifier()
-      for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
-          newX_train = [X_train[idx] for idx in train_index]
-          newy_train = [y_train[idx] for idx in train_index]
-          QDA.fit(newX_train, newy_train)
-          #print(QDA.predict_proba(newX_train))
-          DTC.fit(newX_train, newy_train)
-          newX_test = [X_train[idx] for idx in val_index]
-          newy_test = [y_train[idx] for idx in val_index]
-          QDAF1array[i,j] = f1_score(newy_test,QDA.predict(newX_test))
-          DTCF1array[i,j] = f1_score(newy_test,DTC.predict(newX_test))
+        y = uci_bc_data.diagnosis.map({"B": 0, "M": 1}).to_numpy()
+        X_train, x_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25)
+        if shuffle:
+            for i in range(len(y_train)):
+                r = random.rand()
+                if r < newp:
+                    y_train[i] = 1 - y_train[i]
+        #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
+        kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
+        QDA = QuadraticDiscriminantAnalysis()
+        DTC = tree.DecisionTreeClassifier()
+        for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
+            newX_train = [X_train[idx] for idx in train_index]
+            newy_train = [y_train[idx] for idx in train_index]
+            QDA.fit(newX_train, newy_train)
+            #print(QDA.predict_proba(newX_train))
+            DTC.fit(newX_train, newy_train)
+            newX_test = [X_train[idx] for idx in val_index]
+            newy_test = [y_train[idx] for idx in val_index]
+            QDAF1array[i,j] = f1_score(newy_test,QDA.predict(newX_test))
+            DTCF1array[i,j] = f1_score(newy_test,DTC.predict(newX_test))
 
-          QDAaccuracyarray[i,j] = accuracy_score(newy_test,QDA.predict(newX_test))
-          DTCaccuracyarray[i,j] = accuracy_score(newy_test,DTC.predict(newX_test))
+            QDAaccuracyarray[i,j] = accuracy_score(newy_test,QDA.predict(newX_test))
+            DTCaccuracyarray[i,j] = accuracy_score(newy_test,DTC.predict(newX_test))
 
-          QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
-          DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-    QDAplot[p] = np.mean(QDAF1array) # change for different plots
-    DTCplot[p] = np.mean(DTCF1array) # same
+            QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
+            DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
+
+        QDAplot[p] = np.mean(QDAaccuracyarray) # change for different plots
+        DTCplot[p] = np.mean(DTCaccuracyarray) # same
+
 plt.plot(range(prange),QDAplot) #plotting
 plt.plot(range(prange),DTCplot)
 plt.ylabel('sensitivity')
