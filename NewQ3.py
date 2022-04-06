@@ -36,7 +36,6 @@ from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
 from numpy import random
 import matplotlib.pyplot as plt
-
 folds = 5
 it = 100
 prange = 25
@@ -51,7 +50,7 @@ QDAplot = np.empty([prange])
 DTCplot = np.empty([prange])
 for p in range(prange):
     shuffle = True
-    newp=p/100
+    newp = p/100
     if shuffle:
         for i in range(len(y)):
             r = random.rand()
@@ -79,9 +78,9 @@ for p in range(prange):
 
           QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
           DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-    QDAplot[p] = np.mean(QDAF1array)
-    DTCplot[p] = np.mean(DTCF1array)
-plt.plot(range(prange),QDAplot)
+    QDAplot[p] = np.mean(QDAF1array) # change for different plots
+    DTCplot[p] = np.mean(DTCF1array) # same
+plt.plot(range(prange),QDAplot) #plotting
 plt.plot(range(prange),DTCplot)
 plt.ylabel('sensitivity')
 plt.xlabel('% of mislabelled data')
@@ -90,7 +89,7 @@ plt.plot(range(prange), DTCplot, label ='DTC/CART')
 plt.legend()
 plt.show()
 ## Results
-t = Texttable()
+t = Texttable() #print results for Q3
 t.add_rows([['X', 'Accuracy', 'Sensitivity', 'F1-Score'],
             ['QDA', '%f with std %f' % (np.mean(QDAaccuracyarray),np.std(QDAaccuracyarray)),'%f with std %f' % (np.mean(QDAsensitivityarray),np.std(QDAsensitivityarray)), '%f with std %f' % (np.mean(QDAF1array),np.std(QDAF1array))],
             ['DTC', '%f with std %f' % (np.mean(DTCaccuracyarray), np.std(DTCaccuracyarray)), '%f with std %f' % (np.mean(DTCsensitivityarray), np.std(DTCsensitivityarray)),'%f with std %f' % (np.mean(DTCF1array), np.std(DTCF1array))]])
