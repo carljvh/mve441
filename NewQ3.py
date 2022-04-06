@@ -58,7 +58,7 @@ def testc(y_actual, y): #returns all true-positives, false positives etc for our
            FN += 1
     return(TP, FP, TN, FN)
 folds=10
-it=100
+it=2500
 QDAscore=np.empty([1,4])
 DTCscore=np.empty([1,4])
 QDAarray=np.empty([it,4])
