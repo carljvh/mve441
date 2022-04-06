@@ -36,8 +36,9 @@ from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
 from numpy import random
 import matplotlib.pyplot as plt
-folds = 10
-it = 20
+
+folds = 5
+it = 100
 prange = 25
 # 3 measurements for 2 methods
 QDAF1array = np.empty([folds,it])
@@ -78,10 +79,15 @@ for p in range(prange):
 
           QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
           DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-    QDAplot[p]=np.mean(QDAaccuracyarray)
-    DTCplot[p] = np.mean(DTCaccuracyarray)
+    QDAplot[p] = np.mean(QDAF1array)
+    DTCplot[p] = np.mean(DTCF1array)
 plt.plot(range(prange),QDAplot)
 plt.plot(range(prange),DTCplot)
+plt.ylabel('sensitivity')
+plt.xlabel('% of mislabelled data')
+plt.plot(range(prange), QDAplot, label ='QDA')
+plt.plot(range(prange), DTCplot, label ='DTC/CART')
+plt.legend()
 plt.show()
 ## Results
 t = Texttable()
