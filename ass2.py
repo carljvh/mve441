@@ -4,20 +4,31 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import random
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.metrics import zero_one_loss
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
-
-def generate_uni_data(n_datapoints, x1_lim, x2_lim):
+def generate_uni_data(n_datapoints, x1_lim=5, x2_lim=4):
     data = np.zeros([n_datapoints,3])
 
     for i in range(n_datapoints):
-        data[i,0] = random.uniform(0,10)
-        data[i,1] = random.uniform(0,10)
-        if data[i,0] >= x1_lim and data[i,1] <= x2_lim:
-            data[i,2] = 1
-    
+        x1 = random.uniform(0,10)
+        x2 = random.uniform(0,10)
+        data[i,0] = x1
+        data[i,1] = x2
+
+        if x2 <= 4:
+            if x1 <= 2:
+                data[i,2] = 1
+            if 2 < x1 <= 5 and x2 <= 2:
+                data[i,2] = 1
+        if x2 <= 6:
+            if 5 < x1 <= 7:
+                data[i,2] = 1
+            if 7 < x1 and x2 <=2:
+                data[i,2] = 1
+
     return pd.DataFrame(data, columns=["x_1", "x_2", "class"])
 
 
@@ -48,11 +59,11 @@ def evaluate(dataframe):
     return accuracy_cart, accuracy_qda
 
 
-def generate_average_results(n_datapoints, runs, x1_lim, x2_lim, mu, cov):
+def generate_average_results(n_datapoints, runs, mu, cov):
     accuracy = np.zeros([runs, 4])
 
     for i in range(runs):
-        df_uni = generate_uni_data(n_datapoints, x1_lim, x2_lim)
+        df_uni = generate_uni_data(n_datapoints)
         result_uni = evaluate(df_uni)
         accuracy[i,0] = result_uni[0] 
         accuracy[i,1] = result_uni[1]
@@ -84,29 +95,46 @@ def plot_decision_boundary(clf, X, Y, cmap='Paired_r'):
     plt.show()
 
 
-# fix more complex data uni
-# measure test error via confusion matrices?
+def generate_confusion_matrix(y_test, y_pred, title):
+    cm = confusion_matrix(y_test, y_pred)
+    xAxisLabels = ('Class 1', 'Class 2')
+    yAxisLabels = ('Class 1', 'Class 2')
+    plt.figure(figsize = (2,2))
+    sns.heatmap(cm, annot = True, fmt = "d", linewidths=.5, square=True, xticklabels=xAxisLabels, yticklabels=yAxisLabels, cmap="YlGnBu")
+    plt.xlabel("Predicted values")
+    plt.ylabel("True values")
+    allSampleTitle = title
+    plt.title(allSampleTitle, size = 12)
+    plt.show()
+
+def generate_data_rep(df, data_dist: str):
+    X_train, X_test, y_train, y_test = train_test_split(df[['x_1', 'x_2']], df['class'], test_size=0.33, random_state=0)
+
+    cart = tree.DecisionTreeClassifier()
+    cart = cart.fit(X_train.to_numpy(), y_train.to_numpy())
+    y_pred = cart.predict(X_test)
+    plot_decision_boundary(cart, X_test.to_numpy(), y_test.to_numpy())
+    generate_confusion_matrix(y_pred, y_test, "CART (%s)" % data_dist)
+
+    qda = QuadraticDiscriminantAnalysis()
+    qdaFit = qda.fit(X_train.to_numpy(),y_train.to_numpy())
+    y_pred = qda.predict(X_test)
+    plot_decision_boundary(qdaFit, X_test.to_numpy(), y_test.to_numpy())
+    generate_confusion_matrix(y_pred, y_test, "QDA (%s)" % data_dist)
+
+
 n = 500
 runs = 20
-
-x1_lim = 5
-x2_lim = 4
 mu = [[7,2], [2,7]]
-cov = [[[1,0],[0,1]],  [[2,1],[1,2]]]
+cov = [[[3,0],[0,3]],  [[2,1],[1,2]]]
 
-df = generate_uni_data(n, x1_lim, x2_lim)
-X_train, X_test, y_train, y_test = train_test_split(df[['x_1', 'x_2']], df['class'], test_size=0.33, random_state=0)
-cart = tree.DecisionTreeClassifier()
-cart = cart.fit(X_train.to_numpy(), y_train.to_numpy())
-plot_decision_boundary(cart, X_test.to_numpy(), y_test.to_numpy())
+df = generate_uni_data(n)
+generate_data_rep(df, "uniform distribution")
 
 df = generate_mvn_data(500, mu, cov)
-X_train, X_test, y_train, y_test = train_test_split(df[['x_1', 'x_2']], df['class'], test_size=0.33, random_state=0)
-qda = QuadraticDiscriminantAnalysis()
-qdaFit = qda.fit(X_train.to_numpy(),y_train.to_numpy())
-plot_decision_boundary(qdaFit, X_test.to_numpy(), y_test.to_numpy())
+generate_data_rep(df, "normal distribution")
 
-result = generate_average_results(n, runs, x1_lim, x2_lim, mu, cov)
+result = generate_average_results(n, runs, mu, cov)
 print("Uniform data: \nmean accuracy for CART: %f (std %f)" % (result['cart']['uni'][0],result['cart']['uni'][1]))
 print("mean accuracy for QDA: %f (std %f) \n" % (result['qda']['uni'][0],result['qda']['uni'][1]))
 
