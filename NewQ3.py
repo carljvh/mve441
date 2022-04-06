@@ -28,52 +28,61 @@ y = uci_bc_data.diagnosis.map({"B": 0, "M": 1}).to_numpy()
 X = uci_bc_data.drop("diagnosis", axis=1).to_numpy()
 # Our code
 #shuffle for Q4
-from numpy import random
-shuffle = False
-p = 0.1
-if shuffle:
-    for i in range(len(y)):
-        r = random.rand()
-        if r < p:
-            y[i] = 1 - y[i]
-
 import sklearn as sk
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn import tree
 from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
+from numpy import random
+import matplotlib.pyplot as plt
 folds = 10
-it = 250
+it = 20
+prange = 25
+# 3 measurements for 2 methods
 QDAF1array = np.empty([folds,it])
 DTCF1array = np.empty([folds,it])
 QDAaccuracyarray = np.empty([folds,it])
 DTCaccuracyarray = np.empty([folds,it])
 QDAsensitivityarray = np.empty([folds,it])
 DTCsensitivityarray = np.empty([folds,it])
-for j in range(it):
-  X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-  #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
-  kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
-  QDA = QuadraticDiscriminantAnalysis()
-  DTC = tree.DecisionTreeClassifier()
-  for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
-      newX_train = [X_train[idx] for idx in train_index]
-      newy_train = [y_train[idx] for idx in train_index]
-      QDA.fit(newX_train, newy_train)
-      DTC.fit(newX_train, newy_train)
-      newX_test = [X_train[idx] for idx in val_index]
-      newy_test = [y_train[idx] for idx in val_index]
+QDAplot = np.empty([prange])
+DTCplot = np.empty([prange])
+for p in range(prange):
+    shuffle = True
+    newp=p/100
+    if shuffle:
+        for i in range(len(y)):
+            r = random.rand()
+            if r < newp:
+                y[i] = 1 - y[i]
+    for j in range(it):
+      X_train, x_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25)
+      #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
+      kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
+      QDA = QuadraticDiscriminantAnalysis()
+      DTC = tree.DecisionTreeClassifier()
+      for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
+          newX_train = [X_train[idx] for idx in train_index]
+          newy_train = [y_train[idx] for idx in train_index]
+          QDA.fit(newX_train, newy_train)
+          #print(QDA.predict_proba(newX_train))
+          DTC.fit(newX_train, newy_train)
+          newX_test = [X_train[idx] for idx in val_index]
+          newy_test = [y_train[idx] for idx in val_index]
+          QDAF1array[i,j] = f1_score(newy_test,QDA.predict(newX_test))
+          DTCF1array[i,j] = f1_score(newy_test,DTC.predict(newX_test))
 
-      QDAF1array[i,j] = f1_score(newy_test,QDA.predict(newX_test))
-      DTCF1array[i,j] = f1_score(newy_test,DTC.predict(newX_test))
+          QDAaccuracyarray[i,j] = accuracy_score(newy_test,QDA.predict(newX_test))
+          DTCaccuracyarray[i,j] = accuracy_score(newy_test,DTC.predict(newX_test))
 
-      QDAaccuracyarray[i,j] = accuracy_score(newy_test,QDA.predict(newX_test))
-      DTCaccuracyarray[i,j] = accuracy_score(newy_test,DTC.predict(newX_test))
-
-      QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
-      DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-
+          QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
+          DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
+    QDAplot[p]=np.mean(QDAaccuracyarray)
+    DTCplot[p] = np.mean(DTCaccuracyarray)
+plt.plot(range(prange),QDAplot)
+plt.plot(range(prange),DTCplot)
+plt.show()
 ## Results
 t = Texttable()
 t.add_rows([['X', 'Accuracy', 'Sensitivity', 'F1-Score'],
