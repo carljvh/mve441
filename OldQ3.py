@@ -1,5 +1,5 @@
-# mve441
-test
+# Code from question 3
+# gammal kod; ignorara for now
 def testc(y_actual, y): #returns all true-positives, false positives etc for our classifications
     TP = 0
     FP = 0
@@ -15,7 +15,7 @@ def testc(y_actual, y): #returns all true-positives, false positives etc for our
         if y[i]==0 and y_actual[i]!=y[i]:
            FN += 1
     return(TP, FP, TN, FN)
-gammal kod 
+gammal kod
 QDAscore=np.empty([1,4])
 DTCscore=np.empty([1,4])
 QDAarray=np.empty([it,4])

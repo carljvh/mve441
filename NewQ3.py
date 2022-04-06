@@ -42,39 +42,18 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticD
 from sklearn import tree
 from sklearn.metrics import f1_score, accuracy_score, recall_score
 from texttable import Texttable
-def testc(y_actual, y): #returns all true-positives, false positives etc for our classifications
-    TP = 0
-    FP = 0
-    TN = 0
-    FN = 0
-    for i in range(len(y)):
-        if y_actual[i]==y[i]==1:
-           TP += 1
-        if y[i]==1 and y_actual[i]!=y[i]:
-           FP += 1
-        if y_actual[i]==y[i]==0:
-           TN += 1
-        if y[i]==0 and y_actual[i]!=y[i]:
-           FN += 1
-    return(TP, FP, TN, FN)
-folds=10
-it=2500
-QDAscore=np.empty([1,4])
-DTCscore=np.empty([1,4])
-QDAarray=np.empty([it,4])
-DTCarray=np.empty([it,4])
-QDAF1array=np.empty([folds,it])
-DTCF1array=np.empty([folds,it])
-QDAaccuracyarray=np.empty([folds,it])
-DTCaccuracyarray=np.empty([folds,it])
-QDAsensitivityarray=np.empty([folds,it])
-DTCsensitivityarray=np.empty([folds,it])
+folds = 10
+it = 250
+QDAF1array = np.empty([folds,it])
+DTCF1array = np.empty([folds,it])
+QDAaccuracyarray = np.empty([folds,it])
+DTCaccuracyarray = np.empty([folds,it])
+QDAsensitivityarray = np.empty([folds,it])
+DTCsensitivityarray = np.empty([folds,it])
 for j in range(it):
   X_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
   #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
   kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
-  QDAresult_array = np.empty([folds,4])
-  DTCresult_array = np.empty([folds,4])
   QDA = QuadraticDiscriminantAnalysis()
   DTC = tree.DecisionTreeClassifier()
   for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
@@ -85,9 +64,6 @@ for j in range(it):
       newX_test = [X_train[idx] for idx in val_index]
       newy_test = [y_train[idx] for idx in val_index]
 
-      QDAresult_array[i,:] = testc(newy_test,QDA.predict(newX_test))
-      DTCresult_array[i,:] = testc(newy_test,DTC.predict(newX_test))
-
       QDAF1array[i,j] = f1_score(newy_test,QDA.predict(newX_test))
       DTCF1array[i,j] = f1_score(newy_test,DTC.predict(newX_test))
 
@@ -96,14 +72,6 @@ for j in range(it):
 
       QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
       DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-
-  QDAmean = np.mean(QDAresult_array.astype(int), axis=0)
-  DTCmean = np.mean(DTCresult_array.astype(int), axis=0)
-  QDAscore = QDAscore+QDAmean
-  DTCscore = DTCscore+DTCmean
-#Todo starndard dev
-QDAscore=QDAscore/it
-DTCscore=DTCscore/it
 
 ## Results
 t = Texttable()
