@@ -37,7 +37,7 @@ from texttable import Texttable
 from numpy import random
 import matplotlib.pyplot as plt
 folds = 2
-it = 100
+it = 1
 prange = 25
 # 3 measurements for 2 methods
 QDAF1array = np.empty([folds,it])
@@ -48,17 +48,23 @@ QDAsensitivityarray = np.empty([folds,it])
 DTCsensitivityarray = np.empty([folds,it])
 QDAplot = np.empty([prange])
 DTCplot = np.empty([prange])
+Shufflearray= np.empty([len(y)])
 for p in range(prange):
     shuffle = True
     newp = p / 100
     for j in range(it):
         y = uci_bc_data.diagnosis.map({"B": 0, "M": 1}).to_numpy()
         X_train, x_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25)
+        realy = y_train.copy()
         if shuffle:
             for i in range(len(y_train)):
                 r = random.rand()
                 if r < newp:
                     y_train[i] = 1 - y_train[i]
+        for k in range(len(y_train)):
+            if realy[k] != y_train[k]
+                Shufflearray[k]=1
+        
         #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
         kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
         QDA = QuadraticDiscriminantAnalysis()
@@ -79,13 +85,13 @@ for p in range(prange):
 
             QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
             DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-
+        print(QDAaccuracyarray[:,j])
         QDAplot[p] = np.mean(QDAaccuracyarray) # change for different plots
         DTCplot[p] = np.mean(DTCaccuracyarray) # same
 
 plt.plot(range(prange),QDAplot) #plotting
 plt.plot(range(prange),DTCplot)
-plt.ylabel('sensitivity')
+plt.ylabel('Accuracy')
 plt.xlabel('% of mislabelled data')
 plt.plot(range(prange), QDAplot, label ='QDA')
 plt.plot(range(prange), DTCplot, label ='DTC/CART')
