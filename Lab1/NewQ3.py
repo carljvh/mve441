@@ -48,7 +48,6 @@ QDAsensitivityarray = np.empty([folds,it])
 DTCsensitivityarray = np.empty([folds,it])
 QDAplot = np.empty([prange])
 DTCplot = np.empty([prange])
-Shufflearray= np.empty([len(y)])
 for p in range(prange):
     shuffle = True
     newp = p / 100
@@ -61,10 +60,10 @@ for p in range(prange):
                 r = random.rand()
                 if r < newp:
                     y_train[i] = 1 - y_train[i]
+        Shufflearray = np.empty([len(y_train)])
         for k in range(len(y_train)):
-            if realy[k] != y_train[k]
-                Shufflearray[k]=1
-        
+            if realy[k] != y_train[k]:
+                Shufflearray[k] = 1
         #kfold = sk.model_selection.KFold(n_splits=folds, shuffle=True)
         kfold = sk.model_selection.StratifiedKFold(n_splits=folds, shuffle=True)
         QDA = QuadraticDiscriminantAnalysis()
@@ -72,8 +71,8 @@ for p in range(prange):
         for i, (train_index, val_index) in enumerate(kfold.split(X_train, y_train)): #remove y_train when you dont use stratisfied
             newX_train = [X_train[idx] for idx in train_index]
             newy_train = [y_train[idx] for idx in train_index]
+            #correcty_train = [realy[idx] for idx in train_index]
             QDA.fit(newX_train, newy_train)
-            #print(QDA.predict_proba(newX_train))
             DTC.fit(newX_train, newy_train)
             newX_test = [X_train[idx] for idx in val_index]
             newy_test = [y_train[idx] for idx in val_index]
@@ -85,7 +84,6 @@ for p in range(prange):
 
             QDAsensitivityarray[i,j] = recall_score(newy_test,QDA.predict(newX_test))
             DTCsensitivityarray[i,j] = recall_score(newy_test,DTC.predict(newX_test))
-        print(QDAaccuracyarray[:,j])
         QDAplot[p] = np.mean(QDAaccuracyarray) # change for different plots
         DTCplot[p] = np.mean(DTCaccuracyarray) # same
 
