@@ -10,14 +10,12 @@ feat = pd.read_csv('assignment-2/data/data.csv', index_col=0)
 feat = VarianceThreshold(threshold=2.2343).fit_transform(feat)
 feat = StandardScaler().fit_transform(feat)
 
-# bör vi inte välja alla 5k här?
 n_PC = 801
 
 pca = PCA(n_components=n_PC)
 principalComponents = pca.fit_transform(feat)
 principalDf = pd.DataFrame(data = principalComponents)
 
-# Patterns --> kan göra confusion matrix 
 principalDf.plot.scatter(x=0, y=1)
 plt.savefig('assignment-2/IMGs/task3/prin_comp_01.png')
 plt.clf()
@@ -61,5 +59,5 @@ plt.clf()
 for idx, v in enumerate(princ_var):
     if v < 1:
         print('Index of PC with variance less then 1: %i' % (idx))
-        principalDf.iloc[:,0:idx].to_csv('assignment-2/data/pc_task3.csv')
+        principalDf.iloc[:,0:idx].to_csv('assignment-2/data/pc_521.csv')
         break
