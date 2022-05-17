@@ -1,13 +1,10 @@
-from dataclasses import replace
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.preprocessing import normalize
-from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.utils import resample
 
 def calc_C_1se(clf):
     C_1se = []
@@ -29,28 +26,28 @@ def generate_confidence_data(data, labels, M=50, sample_prop=0.95):
     df = data.join(labels['Class'])
     n_classes = labels['Class'].nunique()
     n_features = len(data.columns)
-    C = np.zeros((n_classes, n_features))
-    I = np.zeros_like(C)
+    F = np.zeros((n_classes, n_features))
+    I = np.zeros_like(F)
     for m in range(M):
         sample_data = df.sample(frac=sample_prop, replace=True)
-        clf = LogisticRegressionCV(cv=5, penalty="l1", solver="liblinear", intercept_scaling=10000, multi_class="ovr", scoring="f1", Cs=C_1se).fit(sample_data.iloc[:,0:200], sample_data['Class'])
+        clf = LogisticRegressionCV(cv=5, penalty="l1", solver="liblinear", intercept_scaling=10000, multi_class="ovr", scoring="f1", Cs=np.logspace(-4, 4, 30)).fit(sample_data.iloc[:,0:200], sample_data['Class'])
         for i in range(n_classes):
             for j in range(n_features):
                 if abs(clf.coef_[i,j]) > 0:
-                    C[i,j] += 1
+                    F[i,j] += 1
         I += clf.coef_
-    C = C / M
+    F = F / M
     I = I / M
-    return C, I
+    return F, I
 
 
 # returns a list with a dataframe for each class containing top n features, rated by frequency and abs(size) of coefficient
 def select_top_n_genes(top_n, n_classes, freq_matrix, coef_avg_matrix):
     top_data = []
-    C = pd.DataFrame(freq_matrix.T)
+    F = pd.DataFrame(freq_matrix.T)
     I = pd.DataFrame(coef_avg_matrix.T)
     for i in range(n_classes):
-        df = pd.DataFrame({'frequency': C.iloc[:,i].tolist(), 'coef_abs': np.absolute(I.iloc[:,i].tolist())})
+        df = pd.DataFrame({'frequency': F.iloc[:,i].tolist(), 'coef_abs': np.absolute(I.iloc[:,i].tolist())})
         top_data.append(df.nlargest(top_n, ['frequency', 'coef_abs']))
     return top_data
 
@@ -64,14 +61,14 @@ data = pd.DataFrame(SelectKBest(score_func=f_classif, k=200).fit_transform(data_
 # Task 2
 clf = LogisticRegressionCV(cv=5, penalty="l1", solver="liblinear", intercept_scaling=10000, multi_class="ovr", scoring="f1", Cs=np.logspace(-4, 4, 30)).fit(data, labels['Class'])
 C_max = clf.C_
-print("C_max: %s" % C_max)
 C_1se = calc_C_1se(clf)
+print("C_max: %s" % C_max)
 print("C_1se: %s" % C_1se)
 
 # Task 3
-C, I = generate_confidence_data(data, labels)
-top_n = 30
-top_data = select_top_n_genes(top_n=top_n, n_classes=labels['Class'].nunique(), freq_matrix=C, coef_avg_matrix=I)
+F, I = generate_confidence_data(data, labels)
+top_n = 10
+top_data = select_top_n_genes(top_n=top_n, n_classes=labels['Class'].nunique(), freq_matrix=F, coef_avg_matrix=I)
 
 fig, axes = plt.subplots(2, 3)
 fig.suptitle('Frequencies for the top %s selected genes for each diagnosis' % top_n)
