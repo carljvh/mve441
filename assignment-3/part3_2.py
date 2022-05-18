@@ -86,11 +86,11 @@ coefMatrix = [np.zeros(n_features),np.zeros(n_features),np.zeros(n_features) ]
 def makeBinary(a):
     a[a!=0] = 1
     return a.astype("int32")
-    
 
 
 B= 50
 for iter in range(B):
+    print(iter)
     # Sampling
     bs_sample = df.sample(frac=sample_prop, replace=True)
     X_bs = bs_sample.iloc[:,0:n_features].values
@@ -113,7 +113,15 @@ for iter in range(B):
 plt.bar(x=np.linspace(1,n_features,n_features), height=coefMatrix[1], width=0.5)
 plt.show()
 
-
+threshold = 0.7
+threshold_counts_min = []
+threshold_index = []
+for i in range(0,len(coefMatrix[1])):
+    if coefMatrix[1][i] > threshold * B:
+        threshold_counts_min.append(coefMatrix[1][i])
+        threshold_index.append(i)
+print(threshold_counts_min)
+print(threshold_index)
 
 # get lambdas
 # LassoCV -> lmin lse 
