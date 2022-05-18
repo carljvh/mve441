@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import Lasso, LassoCV
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, confusion_matrix
 from sklearn.preprocessing import normalize
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegressionCV
@@ -88,7 +88,7 @@ def makeBinary(a):
     return a.astype("int32")
 
 
-B= 50
+B = 10
 for iter in range(B):
     print(iter)
     # Sampling
@@ -103,7 +103,7 @@ for iter in range(B):
     alphas = [0.8*alpha_1se, alpha_1se, 1.2*alpha_1se]
     index=0
     for alph in alphas:
-        lassoModel =Lasso(alpha=alph).fit(X_bs, y_bs)
+        lassoModel = Lasso(alpha=alph).fit(X_bs, y_bs)
 
         lassol1s = lassoModel.coef_
         bin = makeBinary(lassol1s)
@@ -112,16 +112,33 @@ for iter in range(B):
 
 plt.bar(x=np.linspace(1,n_features,n_features), height=coefMatrix[1], width=0.5)
 plt.show()
+thresholds = np.array([0.7, 0.75, 0.8, 0.85, 0.9])
 
-threshold = 0.7
-threshold_counts_min = []
-threshold_index = []
-for i in range(0,len(coefMatrix[1])):
-    if coefMatrix[1][i] > threshold * B:
-        threshold_counts_min.append(coefMatrix[1][i])
-        threshold_index.append(i)
-print(threshold_counts_min)
-print(threshold_index)
+for al in range(0, len(alphas)):
+    sensitivityarray = []
+    specificityyarray = []
+    for th in range(0,len(thresholds)):
+        threshold = thresholds[th]
+        threshold_counts_min = []
+        threshold_index = []
+        for i in range(0,len(coefMatrix[1])):
+            if coefMatrix[1][i] > threshold * B:
+                threshold_counts_min.append(coefMatrix[al][i])
+                threshold_index.append(i)
+        ypred = np.zeros(200)
+        for i in range(0,len(threshold_index)):
+            ypred[threshold_index[i]] = 1
+        betabin = makeBinary(beta)
+        tn, fp, fn, tp = confusion_matrix(betabin,ypred).ravel()
+        sensitivity = tp / (tp + fn)
+        specificity = tn / (tn + fp)
+        sensitivityarray.append(sensitivity)
+        specificityyarray.append(specificity)
+    print(sensitivityarray)
+    plt.plot(thresholds, sensitivityarray, label = alphas[al])
+    plt.ylim(ymin=0)
+plt.legend()
+plt.show()
 
 # get lambdas
 # LassoCV -> lmin lse 
