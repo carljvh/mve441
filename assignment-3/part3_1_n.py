@@ -6,8 +6,7 @@ from sklearn.linear_model import Lasso, LassoCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import normalize
-from sklearn.feature_selection import SelectKBest, f_classif
-from sklearn.linear_model import LogisticRegressionCV
+from sklearn.metrics import confusion_matrix
 
 def simulate_data(n, p, rng, *, sparsity=0.95, SNR=2.0, beta_scale=5.0, sd=1):
     """Simulate data for Project 3, Part 1.
@@ -67,36 +66,61 @@ def get_lambda_1se_idx(lasso_clf, n_folds):
     return lasso_clf.alphas_[idx_alpha]
 
 
+def calc_TPR(betas, counts):
+    betas[np.absolute(betas) > 0] = 1
+    counts[counts < 0.9*M] = 0
+    counts[counts >= 0.9*M] = 1
+    TPR = []
+    for i in range(len(betas)):
+        TN, FP, FN, TP = confusion_matrix(betas[i], counts[i]).ravel()
+        tpr = TP/(TP+FN)
+        TPR.append(np.around(tpr, decimals=2))
+    return TPR
+
+
 M = 50
 n_folds = 5
 sample_prop = 0.95
 
-SNR = np.array([0.1, 1.0, 2.0])
+SNR = np.array([0.2, 1.0, 5.0])
 n_samples = np.array([40, 100, 150])
 n_features = 200
 sparsity = np.array([0.75, 0.9, 0.95, 0.99])
 
-X, y, beta = simulate_data(n=n_samples[2], p=n_features, rng=np.random.default_rng(seed=42), sparsity=sparsity[3], SNR=SNR[0])
-counts_min = np.zeros(n_features)
-counts_1se = np.zeros_like(counts_min)
-for m in range(M):
-    print("bootstrap sample: %s" % m)
+counts = np.zeros((len(n_samples),n_features))
+betas = np.zeros_like(counts)
+for i, n in enumerate(n_samples):
+    X, y, beta = simulate_data(n=n, p=n_features, rng=np.random.default_rng(seed=42), sparsity=sparsity[1], SNR=SNR[2])
     df = pd.DataFrame(X)
     df['y'] = y
-    bs_sample = df.sample(frac=sample_prop, replace=True)
-    X_bs = bs_sample.iloc[:,0:n_features].values
-    y_bs = bs_sample.loc[:, 'y'].to_numpy()
+    betas[i] = beta
+    
+    for m in range(M):
+        print("bootstrap sample #%s" % str(m+1))
+        bs_sample = df.sample(frac=sample_prop, replace=True)
+        X_bs = bs_sample.iloc[:,0:n_features].values
+        y_bs = bs_sample.loc[:, 'y'].to_numpy()
 
-    lasso_min = LassoCV(cv=n_folds, max_iter = 3000).fit(X_bs, y_bs)
-    alpha_min = lasso_min.alphas_
+        lasso_min = LassoCV(cv=n_folds, max_iter = 3000).fit(X_bs, y_bs)
+        alpha_1se = get_lambda_1se_idx(lasso_min, n_folds)
+        lasso_1se = Lasso(alpha=alpha_1se).fit(X_bs, y_bs)
 
-    alpha_1se = get_lambda_1se_idx(lasso_min, n_folds)
-    lasso_1se = Lasso(alpha=alpha_1se).fit(X_bs, y_bs)
-    for j in range(n_features):
-        if abs(lasso_min.coef_[j]) > 0:
-            counts_min[j] += 1
-        if abs(lasso_1se.coef_[j]) > 0:
-            counts_1se[j] += 1
+        for j in range(n_features):
+            if abs(lasso_1se.coef_[j]) > 0:
+                counts[i][j] += 1
 
-plt.bar(x=np.linspace(1,n_features,n_features), height=counts_min, width=0.5)
+TPR = calc_TPR(betas.copy(), counts.copy())
+
+fig, axes = plt.subplots(1, 3)
+fig.suptitle('Counts for features with SNR=%s, p=%s, s=%s varied over n' % (SNR[2], n_features, sparsity[1]))
+for i, ax in enumerate(axes.flatten()):
+    df = pd.DataFrame({'counts': counts[i][:]})
+    df = df[df.counts >= 0.9*M]
+    indices = np.arange(len(df.index.values))
+    labels = df.index.values
+    ax.bar(x=indices, height=df['counts'], width=0.5, tick_label=labels)
+    ax.set_xticklabels(labels, rotation=70)
+    ax.set(title=("n=%s, TPR=%s" % (n_samples[i], TPR[i])), xlabel="features", ylabel="counts")
+
+plt.savefig("assignment-3/images/n_samples_90.png")
 plt.show()
