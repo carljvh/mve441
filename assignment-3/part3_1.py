@@ -67,34 +67,50 @@ def get_lambda_1se_idx(lasso_clf, n_folds):
     return idx_alpha
 
 
-# returns feature frequency matrix and feature average coefficient value matrix
-def generate_confidence_data(data, labels, alpha, M=1, sample_prop=0.95):
+# returns dataframe containing feature frequency and average coefficient values
+def generate_stability_stats(data, labels, alpha, M=1, sample_prop=0.95):
     df = data.join(labels['Class'])
     n_features = len(data.columns)
     F = np.zeros(n_features)
     I = np.zeros_like(F)
     for m in range(M):
         sample_data = df.sample(frac=sample_prop, replace=True)
-        lasso = Lasso(alpha=alpha).fit(sample_data.iloc[:,0:200], sample_data['Class'])
+        lasso = Lasso(alpha=alpha).fit(sample_data.iloc[:,0:n_features], sample_data['Class'])
         for j in range(n_features):
             if abs(lasso.coef_[j]) > 0:
                 F[j] += 1
         I += lasso.coef_
+
     F = F / M
     I = I / M
-    return F, I
+    return pd.DataFrame({'frequency': F, 'coef_abs': I})
 
 
-# returns a list with a dataframe for each class containing top n features, rated by frequency and abs(size) of coefficient
-def select_top_n_genes(top_n, freq_array, coef_avg_array):
-    df = pd.DataFrame({'frequency': freq_array, 'coef_abs': np.absolute(coef_avg_array)})
-    return df.nlargest(top_n, ['frequency', 'coef_abs'])
+def generate_alphas(X_train, y_train, n_folds):
+    lasso_cv = LassoCV(cv=n_folds).fit(X_train,y_train)
+    std = np.std(lasso_cv.alphas_)
+    return [alpha for alpha in lasso_cv.alphas_ if (lasso_cv.alpha_ - std/n_folds) <= alpha <= (lasso_cv.alpha_ + std/n_folds)]
 
+
+def analyze_stability(param_name, n_test=1000, p=1000, beta_scale=5.0, **kwargs):
+    for k,v in kwargs.items():
+        if hasattr(v, '__iter__'):
+            param = k
+    
+    for value in kwargs[param]:
+        if param == 'n':
+            X, y, beta = simulate_data(n=value+n_test, p=p, rng=np.random.default_rng(), sparsity=kwargs['s'], SNR=kwargs['SNR'], beta_scale=beta_scale)
+        if param == 'sparsity':
+            X, y, beta = simulate_data(n=value+n_test, p=p, rng=np.random.default_rng(), sparsity=value, SNR=2.0, beta_scale=beta_scale)
+        if param == 'SNR':
+            return None
 
 iter = 5
 n_test = 1000
+SNR = np.array([1.5, 2.0, 5.0])
 n_datapoints = np.array([200, 500, 750])
 sparsity = np.array([0.75, 0.9, 0.95, 0.99])
+alphas = np.array([0])
 n_folds = 5
 
 for it in range(iter):
@@ -102,15 +118,12 @@ for it in range(iter):
         for j,s in enumerate(sparsity):
             X, y, beta = simulate_data(n=n+n_test, p=1000,rng=np.random.default_rng(), sparsity=s, SNR=2.0)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=n_test/(n+n_test), random_state=42)
-            lasso_cv = LassoCV(cv=n_folds).fit(X_train,y_train)
-            std = np.std(lasso_cv.alphas_)
-            alphas = [alpha for alpha in lasso_cv.alphas_ if (lasso_cv.alpha_ - std/n_folds) <= alpha <= (lasso_cv.alpha_ + std/n_folds)]
-
+            alphas = generate_alphas(X_train, y_train, n_folds)
             for alpha in alphas:
-                F, I = generate_confidence_data(pd.DataFrame(X_test), pd.DataFrame({'Class': y_test}), alpha, M=1)
-                top_n = 5
-                top_data = select_top_n_genes(top_n=top_n, freq_array=F, coef_avg_array=I)
-                top_data.plot.bar(y='frequency', use_index=True, rot=0, ax=ax)
+                df = generate_stability_stats(pd.DataFrame(X_test), pd.DataFrame({'Class': y_test}), alpha)
+                top_n = 1000
+                top_data = df.nlargest(top_n, ['frequency', 'coef_abs'])
+                plt.bar(x=top_data.index.tolist(), height=top_data['frequency'])
                 plt.show()
                 exit(0)
                 fig, axes = plt.subplots(2, 3)
@@ -121,3 +134,4 @@ for it in range(iter):
                         break
                     top_data[i].plot.bar(y='frequency', use_index=True, rot=0, ax=ax)
                 plt.show()
+
