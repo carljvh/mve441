@@ -111,8 +111,12 @@ for iter in range(B):
         index +=1
 
 plt.bar(x=np.linspace(1,n_features,n_features), height=coefMatrix[1], width=0.5)
+plt.axhline(y = 0.8 * B, color = 'r', linestyle = '-')
+plt.xlabel("Feature number")
+plt.ylabel("Count")
 plt.show()
-thresholds = np.array([0.7, 0.75, 0.8, 0.85, 0.9])
+
+thresholds = np.array([0.7, 0.725, 0.75, 0.775, 0.8, 0.825, 0.85, 0.875, 0.9])
 
 for al in range(0, len(alphas)):
     sensitivityarray = []
@@ -135,8 +139,11 @@ for al in range(0, len(alphas)):
         sensitivityarray.append(sensitivity)
         specificityyarray.append(specificity)
     print(sensitivityarray)
-    plt.plot(thresholds, sensitivityarray, label = alphas[al])
-    plt.ylim(ymin=0)
+    plt.plot(100*thresholds, specificityyarray, label = alphas[al])
+plt.ylim(0.9,1)
+plt.xlabel("Thresholds in percent")
+plt.ylabel("Sensitivity")
+plt.title("Sensitivity for 3 values of alpha for a range of thresholds")
 plt.legend()
 plt.show()
 
