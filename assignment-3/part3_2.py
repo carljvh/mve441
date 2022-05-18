@@ -88,7 +88,7 @@ def makeBinary(a):
     return a.astype("int32")
 
 
-B = 10
+B = 50
 for iter in range(B):
     print(iter)
     # Sampling
@@ -122,7 +122,7 @@ for al in range(0, len(alphas)):
         threshold_counts_min = []
         threshold_index = []
         for i in range(0,len(coefMatrix[1])):
-            if coefMatrix[1][i] > threshold * B:
+            if coefMatrix[al][i] > threshold * B:
                 threshold_counts_min.append(coefMatrix[al][i])
                 threshold_index.append(i)
         ypred = np.zeros(200)
